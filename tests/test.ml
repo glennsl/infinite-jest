@@ -1,7 +1,5 @@
-open Unit
-
 
 let _ = 
-  run [
+  Unit.Test.run [
     My_test.suite
   ]

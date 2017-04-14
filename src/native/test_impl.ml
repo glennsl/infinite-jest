@@ -1,12 +1,13 @@
-open Shared
+open Assertions
+
+type t =
+| Suite of string * (unit -> t list)
+| Test of string * (unit -> Assertions.t)
 
 type result =
 | Ok of string * float
 | Error of string * float * exn
 
-type test =
-| Suite of string * (unit -> test list)
-| Test of string * (unit -> assertion)
 
 let _assert = function
 | Equals (a, b) ->

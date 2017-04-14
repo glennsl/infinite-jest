@@ -1,8 +1,13 @@
-type test
-type assertion
+module Assertions : sig
+  type t
 
-val assertEqual : 'a -> 'a -> assertion
+  val assertEqual : 'a -> 'a -> t
+end
 
-val describe : string -> (unit -> test list) -> test
-val test : string -> (unit -> assertion) -> test
-val run : test list -> unit
+module Test : sig
+  type t
+
+  val describe : string -> (unit -> t list) -> t
+  val test : string -> (unit -> Assertions.t) -> t
+  val run : t list -> unit
+end

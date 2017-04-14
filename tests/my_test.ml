@@ -1,4 +1,5 @@
-open Unit
+open Unit.Assertions
+open Unit.Test
 
 let suite =
   describe "my test suite" (fun () -> [
