@@ -1,14 +1,14 @@
 {
-  "name": "reunit",
+  "name": "poc-xtest",
   "version": "0.0.0",
-  "description": "Basic unit testing framework for reason",
+  "description": "",
   "keywords": [
-    "reason",
-    "reasonml",
+    "bucklescript",
+    "test",
     "ocaml"
   ],
-  "author": "facebook",
-  "license": "BSD-3-Clause",
+  "author": "glennsl",
+  "license": "MIT",
   "devDependencies": {
     "bs-platform": "^1.6.0"
   },
