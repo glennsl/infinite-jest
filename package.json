@@ -1,0 +1,24 @@
+{
+  "name": "reunit",
+  "version": "0.0.0",
+  "description": "Basic unit testing framework for reason",
+  "keywords": [
+    "reason",
+    "reasonml",
+    "ocaml"
+  ],
+  "author": "facebook",
+  "license": "BSD-3-Clause",
+  "devDependencies": {
+    "bs-platform": "^1.6.0"
+  },
+  "scripts": {
+    "start": "bsb -make-world -w",
+    "test:native": "ocamlbuild -Is src,src/shared,src/native,tests tests/test.byte && ./test.byte",
+    "test:bs": "bsb -make-world && jest",
+    "clean": "bsb -clean-world"
+  },
+  "dependencies": {
+    "jest": "^19.0.2"
+  }
+}

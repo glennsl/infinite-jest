@@ -1,0 +1,12 @@
+{
+  "name": "reunit",
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": ["shared", "bs"]
+    }, {
+      "dir": "tests",
+      "type": "dev"
+    }
+  ],
+}
