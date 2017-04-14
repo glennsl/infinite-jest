@@ -1,7 +1,9 @@
 module Assertions : sig
   type t
+end
 
-  val assertEqual : 'a -> 'a -> t
+module Expect : sig
+  val toEqual : 'a -> 'a -> Assertions.t
 end
 
 module Test : sig
