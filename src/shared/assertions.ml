@@ -1,2 +1,2 @@
 type t =
-| Equals : 'a * 'a -> t
+| Equals : 'a * 'a * ('a -> string) option -> t

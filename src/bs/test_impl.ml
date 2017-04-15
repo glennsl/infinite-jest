@@ -5,7 +5,7 @@ type t
 external expect : 'a -> < .. > Js.t = "" [@@bs.val]
 
 let assert_ : Assertions.t -> unit = function
-| Equals (a, b) -> (expect a) ## toEqual b
+| Equals (a, b, _) -> (expect a) ## toEqual b
 
 external describe : string -> (unit -> t list) -> t = "" [@@bs.val]
 

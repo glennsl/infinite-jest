@@ -1,3 +1,3 @@
 open Assertions
 
-let toEqual b a = Equals (a, b)
+let toEqual ?printer b a = Equals (a, b, printer)

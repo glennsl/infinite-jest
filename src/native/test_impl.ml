@@ -10,8 +10,13 @@ type result =
 
 
 let _assert = function
-| Equals (a, b) ->
-  if a != b then failwith "a != b"
+| Equals (a, b, maybePrinter) ->
+  if a != b
+  then match maybePrinter with
+  | Some print ->
+    failwith ("Expected `" ^ (print b) ^ "`, received `" ^ (print a) ^ "`")
+  | None ->
+    failwith "a != b"
 
 let rec _run context = function
 | Suite (name, f) ->

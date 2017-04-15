@@ -3,7 +3,7 @@ module Assertions : sig
 end
 
 module Expect : sig
-  val toEqual : 'a -> 'a -> Assertions.t
+  val toEqual : ?printer:('a -> string) -> 'a -> 'a -> Assertions.t
 end
 
 module Test : sig
