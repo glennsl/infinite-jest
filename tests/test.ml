@@ -28,7 +28,7 @@ let assertions =
   ])
 
 let assertion_fails =
-  Skip.describe "Assertions - intentional fails" (fun () -> [
+  describe "Assertions - intentional fails" (fun () -> [
     test "stringContaining - fail" (fun () ->
       "banana" |> Expect.stringContaining "bna");
     test "toBeCloseTo - default - fail" (fun () ->

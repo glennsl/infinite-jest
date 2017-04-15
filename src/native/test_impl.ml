@@ -8,7 +8,7 @@ type t =
 
 type result =
 | Ok of string * float
-| Error of string * float * exn
+| Error of string * float
 | Skipped of string
 
 let _string_contains s s' =
@@ -24,85 +24,182 @@ type color =
 | Green
 | Yellow
 | BrightRed
+| Blue
+| DarkGray
+| LightGray
 
 let _print_escape codes =
   print_string @@ "\027[" ^ (codes |> List.map string_of_int |> String.concat ";") ^ "m"
 
-let _with_color color f =
+let _with_color color f arg =
   _print_escape 
-    (match color with
+    begin match color with
     | Red -> [31]
     | Green -> [32]
     | Yellow -> [33]
-    | BrightRed -> [31;1]);
-  f ();
+    | BrightRed -> [31;1]
+    | Blue -> [34]
+    | DarkGray -> [37;2]
+    | LightGray -> [37]
+    end;
+  f arg;
   _print_escape [0]
 
-exception Assert_error of string
+let _indent n =
+  print_string @@ String.make n ' '
 
-let _fail message =
-  raise (Assert_error message)
+let _print_pseudo_code assertName expected received = begin
+  _indent 4;
+  _with_color Red print_string received;
+  _with_color DarkGray print_string @@ " |> Expect." ^ assertName ^ " ";
+  _with_color Green print_endline expected;
+end
 
-let _fail_expect expected received =
-  _fail @@ "Expected `" ^ expected ^ "`, received `" ^ received ^ "`"
+let _print_expect assertName expected received = begin
+  _print_pseudo_code assertName expected received;
+  print_newline();
+  _indent 4; _with_color LightGray print_endline "Expected:";
+  _indent 6; _with_color Green print_endline expected;
+  _indent 4; _with_color LightGray print_endline "Received:";
+  _indent 6; _with_color Red print_endline received;
+end
 
-let _assert = function
+let _print_assertion_error = function
 | CloseTo (a, b, digits) ->
-  if abs_float (a -. b) >= (10. ** (-.(float_of_int digits))) /. 2. then
-    _fail @@ "Expected value to be close to (with " ^ (string_of_int digits) ^ "-digit precision) `" ^
-      (string_of_float a) ^ "`, received `" ^ (string_of_float b) ^ "`"
+  let expected = string_of_float a in
+  let received = string_of_float b in
+  let digits = string_of_int digits in
+
+  _indent 4;
+  _with_color Red print_string received;
+  _with_color DarkGray  print_string " |> Expect.toBeCloseTo ~digits:";
+  _with_color Blue print_string digits;
+  _with_color Green print_endline expected;
+  print_newline();
+
+  _indent 4;
+  _with_color LightGray print_string "Expected value to be close to (with";
+  _with_color Blue print_string digits;
+  _with_color LightGray print_endline "-digit precision):";
+  _indent 6; _with_color Green print_endline expected;
+  _indent 4; _with_color LightGray print_endline "Received:";
+  _indent 6; _with_color Red print_endline received;
 
 | Equals (a, b, maybePrinter) ->
-  if a != b
-  then begin
-    match maybePrinter with
-    | Some print ->
-      _fail_expect (print a) (print b)
-    | None ->
-      _fail "Expected `a = b`"
-  end
-| False a ->
-  if a then
-    _fail_expect "false" "true"
+  _print_pseudo_code "toEqual" "<a>" "<b>"
+
+| False _ ->
+  _print_expect "toBeFalse" "false" "true"
+
 | GreaterThan (a, b) ->
-  if a <= b then
-    _fail @@ "Expected `" ^ (string_of_int a) ^ " > " ^ (string_of_int b) ^ "`"
+  let expected = string_of_int a in
+  let received = string_of_int b in
+
+  _print_pseudo_code "toBeGreaterThan" expected received;
+  print_newline ();
+  _indent 4; _with_color LightGray print_endline "Expected value to be greater than:";
+  _indent 6; _with_color Green print_endline expected;
+  _indent 4; _with_color LightGray print_endline "Received:";
+  _indent 6; _with_color Red print_endline received;
+
 | LessThan (a, b) ->
-  if a >= b then
-    _fail @@ "Expected `" ^ (string_of_int a) ^ " < " ^ (string_of_int b) ^ "`"
+  let expected = string_of_int a in
+  let received = string_of_int b in
+
+  _print_pseudo_code "toBeLessThan" expected received;
+  print_newline ();
+  _indent 4; _with_color LightGray print_endline "Expected value to be less than:";
+  _indent 6; _with_color Green print_endline expected;
+  _indent 4; _with_color LightGray print_endline "Received:";
+  _indent 6; _with_color Red print_endline received;
+
 | ListContains (l, x, maybePrinter) ->
-  if not @@ List.exists ((=) x) l then begin
-    match maybePrinter with
-    | Some print ->
-      let print_list l = "[" ^ (l |> List.map print |> String.concat ", ") ^ "]" in
-      _fail @@ "Expected list containing `" ^ (print x) ^ "`, received `" ^ (print_list l) ^ "`"
-    | None ->
-      _fail "Expected list to contain a specific element"
+  begin match maybePrinter with
+  | Some print ->
+    let print_list l = "[" ^ (l |> List.map print |> String.concat ", ") ^ "]" in
+    let expected = print x in
+    let received = print_list l in
+
+    _print_pseudo_code "toBeLessThan" expected received;
+    print_newline ();
+    _indent 4; _with_color LightGray print_endline "Expected list:";
+    _indent 6; _with_color Red print_endline received;
+    _indent 4; _with_color LightGray print_endline "To contain value:";
+    _indent 6; _with_color Green print_endline expected;
+  | None ->
+    _print_pseudo_code "toContain" "[<...>]" "<x>"
   end
+
 | ListContainsAll (l, l', maybePrinter) ->
-  if not (l' |> List.for_all @@ fun x -> List.exists ((=) x) l) then begin
-    match maybePrinter with
-    | Some print ->
-      let print_list l = "[" ^ (l |> List.map print |> String.concat ", ") ^ "]" in
-      _fail @@ "Expected list containing `" ^ (print_list l') ^ "`, received `" ^ (print_list l) ^ "`"
-    | None ->
-      _fail "Expected list to contain a specific element"
+  begin match maybePrinter with
+  | Some print ->
+    let print_list l = "[" ^ (l |> List.map print |> String.concat ", ") ^ "]" in
+    let expected = print_list l' in
+    let received = print_list l in
+
+    _print_pseudo_code "toBeLessThan" expected received;
+    print_newline ();
+    _indent 4; _with_color LightGray print_endline "Expected list:";
+    _indent 6; _with_color Red print_endline received;
+    _indent 4; _with_color LightGray print_endline "To contain values:";
+    _indent 6; _with_color Green print_endline expected;
+  | None ->
+    _print_pseudo_code "toContainAll" "[<...>]" "<x>"
   end
-| Raises f -> begin
-    try
-      ignore @@ f ();
-      _fail "Expected function to raise an exception"
-    with
-    | Assert_error _ as e -> raise e
-    | _ -> ()
+
+| Raises f ->
+  _print_pseudo_code "toRaise" "" "function";
+  print_newline ();
+  _indent 4; _with_color LightGray print_endline "Expected function to raise an expception";
+
+| StringContains (expected, received) ->
+  _print_pseudo_code "stringContaining" expected received;
+  print_newline ();
+  _indent 4; _with_color LightGray print_endline "Expected string:";
+  _indent 6; _with_color Red print_endline received;
+  _indent 4; _with_color LightGray print_endline "To contain the substring:";
+  _indent 6; _with_color Green print_endline expected;
+
+| True _ ->
+  _print_expect "toBeTrue" "true" "false"
+
+let _print_error context name assertion = begin
+  _indent 2; _with_color BrightRed print_endline
+    (name :: context |> List.rev |> String.concat " > ");
+  print_newline ();
+  _print_assertion_error assertion;
+  print_newline ();
+  Printexc.print_backtrace stdout;
+  print_newline ()
+end
+
+
+let _test = function
+| CloseTo (a, b, digits) ->
+  abs_float (a -. b) < (10. ** (-.(float_of_int digits))) /. 2.
+| Equals (a, b, _) ->
+  a = b
+| False a ->
+  not a
+| GreaterThan (a, b) ->
+  a > b
+| LessThan (a, b) ->
+  a < b
+| ListContains (l, x, _) ->
+  List.exists ((=) x) l
+| ListContainsAll (l, l', _) ->
+  l' |> List.for_all @@ fun x -> List.exists ((=) x) l
+| Raises f ->
+  begin try
+    ignore @@ f ();
+    false
+  with
+    _ -> true
   end
-| StringContains (s, s') -> begin
-  if not @@ _string_contains s s' then
-    _fail @@ "Expected string containing `" ^ s' ^ "`, received `" ^ s ^ "`"
-  end
+| StringContains (s, s') ->
+  _string_contains s s'
 | True a ->
-  if not a then
-    _fail_expect "true" "false"
+  a
 
 let rec _run context = function
 | SkippedSuite (name, f) ->
@@ -126,21 +223,15 @@ let rec _run context = function
     Sys.time () in
   let time () =
     Sys.time () -. startTime in
-  try f () |> _assert;
+  let assertion = f () in
+  if _test assertion then
     [Ok (label, time ())]
-  with e ->
-    [Error (label, time (), e)]
+  else begin
+    _print_error context name assertion;
+    [Error (label, time ())]
+  end
 
-
-let describe name f =
-  Suite (name, f)
-
-let test name f =
-  Test (name, f)
-
-let run tests =
-  let results =
-    tests |> List.map (_run []) |> List.flatten in
+let _print_summary results =
   let count_total =
     results |> List.length in
   let count_ok =
@@ -151,29 +242,34 @@ let run tests =
     results
     |> List.filter (function | Skipped _ -> true | _ -> false)
     |> List.length in
-  
+
   results 
   |> List.iter (function
     | Ok (label, time) ->
-      _with_color Green @@ fun () ->
-        Printf.printf "%f %s" time label;
-        print_newline ();
-    | Error (label, time, e) ->
-      _with_color Red @@ fun () ->
-        Printf.printf "%f %s: " time label;
-        print_string "Test Failure!!!!\n";
-        Printexc.to_string e |> print_string;
-        print_newline ();
-        Printexc.print_backtrace stdout;
-        print_newline ();
+      _with_color Green (fun () -> Printf.printf "%f %s" time label) ();
+      print_newline ();
+    | Error (label, time) ->
+      _with_color Red (fun () -> Printf.printf "%f %s: " time label) ();
+      print_newline ();
     | Skipped label ->
-      _with_color Yellow @@ fun () ->
-        Printf.printf "skipped %s" label;
-        print_newline ();
+      _with_color Yellow (Printf.printf "skipped %s") label;
+      print_newline ();
     );
 
   Printf.printf "Executed %i tests. %i tests succeeded. %i skipped" count_total count_ok count_skipped;
   print_newline ()
+
+let describe name f =
+  Suite (name, f)
+
+let test name f =
+  Test (name, f)
+
+let run tests =
+  tests
+  |> List.map (_run [])
+  |> List.flatten
+  |> _print_summary
 
 module Skip = struct
   let describe name f =
