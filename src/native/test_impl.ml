@@ -19,6 +19,25 @@ let _string_contains s s' =
   with Not_found ->
     false
 
+type color =
+| Red
+| Green
+| Yellow
+| BrightRed
+
+let _print_escape codes =
+  print_string @@ "\027[" ^ (codes |> List.map string_of_int |> String.concat ";") ^ "m"
+
+let _with_color color f =
+  _print_escape 
+    (match color with
+    | Red -> [31]
+    | Green -> [32]
+    | Yellow -> [33]
+    | BrightRed -> [31;1]);
+  f ();
+  _print_escape [0]
+
 exception Assert_error of string
 
 let _fail message =
@@ -136,18 +155,21 @@ let run tests =
   results 
   |> List.iter (function
     | Ok (label, time) ->
-      Printf.printf "%f %s" time label;
-      print_newline ();
+      _with_color Green @@ fun () ->
+        Printf.printf "%f %s" time label;
+        print_newline ();
     | Error (label, time, e) ->
-      Printf.printf "%f %s: " time label;
-      print_string "Test Failure!!!!\n";
-      Printexc.to_string e |> print_string;
-      print_newline ();
-      Printexc.print_backtrace stdout;
-      print_newline ();
+      _with_color Red @@ fun () ->
+        Printf.printf "%f %s: " time label;
+        print_string "Test Failure!!!!\n";
+        Printexc.to_string e |> print_string;
+        print_newline ();
+        Printexc.print_backtrace stdout;
+        print_newline ();
     | Skipped label ->
-      Printf.printf "skipped %s" label;
-      print_newline ();
+      _with_color Yellow @@ fun () ->
+        Printf.printf "skipped %s" label;
+        print_newline ();
     );
 
   Printf.printf "Executed %i tests. %i tests succeeded. %i skipped" count_total count_ok count_skipped;
