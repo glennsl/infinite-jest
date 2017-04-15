@@ -1,5 +1,5 @@
 {
-  "name": "poc-xtest",
+  "name": "infinite-jest",
   "sources": [
     {
       "dir": "src",

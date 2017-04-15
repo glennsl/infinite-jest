@@ -166,7 +166,7 @@ let _print_assertion_error = function
 
 let _print_error context label assertion = begin
   _indent 2; _with_color BrightRed print_endline
-    (label :: context |> List.rev |> String.concat " > ");
+    (label :: context |> List.rev |> String.concat " - ");
   print_newline ();
   _print_assertion_error assertion;
   print_newline ();
@@ -229,7 +229,7 @@ let rec _run context = function
     end
   with e ->
     _indent 2; _with_color BrightRed print_endline
-      (label :: context |> List.rev |> String.concat " > ");
+      (label :: context |> List.rev |> String.concat " - ");
     print_newline ();
     _indent 4; _with_color LightGray print_endline "Error";
     _indent 6; _with_color DarkGray print_endline @@ Printexc.to_string e;
@@ -250,7 +250,7 @@ let _print_counts results = begin
   let failed = results |> count (function | Error _ -> true | _ -> false) in
   let skipped = results |> count (function | Skipped _ -> true | _ -> false) in
   let passed = results |> count (function | Ok _ -> true | _ -> false) in
-  let total = results |> List.length in
+  let total = results |> count (fun _ -> true) in
   _with_color BrightRed (Printf.printf "%i failed") failed;
   print_string ", ";
   _with_color Yellow (Printf.printf "%i skipped") skipped;
