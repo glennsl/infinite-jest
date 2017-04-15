@@ -1,12 +1,15 @@
 open Assertions
 
 type t =
+| SkippedSuite of string * (unit -> t list)
+| SkippedTest of string
 | Suite of string * (unit -> t list)
 | Test of string * (unit -> Assertions.t)
 
 type result =
 | Ok of string * float
 | Error of string * float * exn
+| Skipped of string
 
 let _string_contains s s' =
   let re = Str.regexp_string s' in
@@ -83,6 +86,18 @@ let _assert = function
     _fail_expect "true" "false"
 
 let rec _run context = function
+| SkippedSuite (name, f) ->
+  f ()
+  |> List.map (function
+    | Suite (name, f) -> SkippedSuite (name, f)
+    | Test (name, _) -> SkippedTest name
+    | t -> t)
+  |> List.map @@ _run (name :: context)
+  |> List.flatten
+| SkippedTest name ->
+  let label =
+    List.rev (name :: context) |> String.concat " - " in
+  [Skipped label]
 | Suite (name, f) ->
   f () |> List.map @@ _run (name :: context) |> List.flatten
 | Test (name, f) ->
@@ -105,13 +120,17 @@ let test name f =
   Test (name, f)
 
 let run tests =
-  let results: result list =
+  let results =
     tests |> List.map (_run []) |> List.flatten in
   let count_total =
     results |> List.length in
-  let count_ok: int =
+  let count_ok =
     results
     |> List.filter (function | Ok _ -> true | _ -> false)
+    |> List.length in
+  let count_skipped =
+    results
+    |> List.filter (function | Skipped _ -> true | _ -> false)
     |> List.length in
   
   results 
@@ -126,7 +145,18 @@ let run tests =
       print_newline ();
       Printexc.print_backtrace stdout;
       print_newline ();
+    | Skipped label ->
+      Printf.printf "skipped %s" label;
+      print_newline ();
     );
 
-  Printf.printf "Executed %i tests. %i tests succeeded." count_total count_ok;
+  Printf.printf "Executed %i tests. %i tests succeeded. %i skipped" count_total count_ok count_skipped;
   print_newline ()
+
+module Skip = struct
+  let describe name f =
+    SkippedSuite (name, f)
+
+  let test name _ =
+    SkippedTest name
+end

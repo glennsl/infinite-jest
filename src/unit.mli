@@ -21,4 +21,9 @@ module Test : sig
   val describe : string -> (unit -> t list) -> t
   val test : string -> (unit -> Assertions.t) -> t
   val run : t list -> unit
+
+  module Skip : sig
+    val describe : string -> (unit -> t list) -> t
+    val test : string -> (unit -> Assertions.t) -> t
+  end
 end
