@@ -1,5 +1,5 @@
-open Unit
-open Unit.Test
+open InfiniteJest
+open InfiniteJest.Test
 
 let assertions =
   describe "Assertions" (fun () -> [
