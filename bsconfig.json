@@ -3,10 +3,18 @@
   "sources": [
     {
       "dir": "src",
-      "subdirs": ["shared", "bs"]
+      "public": ["InfiniteJest"],
+
+      "subdirs": [{
+        "dir": "shared",
+        "public": []
+      }, {
+        "dir": "bs",
+        "public": []
+      }]
     }, {
       "dir": "tests",
       "type": "dev"
     }
-  ],
+  ]
 }
