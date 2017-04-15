@@ -1,0 +1,3 @@
+true: package(str)
+<node_modules>: -traverse
+<lib>: -traverse
