@@ -21,8 +21,8 @@ let _assert : Assert.t -> unit = function
 external describe : string -> (unit -> t list) -> t = "" [@@bs.val]
 
 external test : string -> (unit -> unit Js.undefined) -> t = "" [@@bs.val]
-let test name f =
-  test name (fun () ->
+let test label f =
+  test label (fun () ->
     f () |> _assert;
     Js.undefined)
 

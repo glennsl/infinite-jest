@@ -10,6 +10,7 @@ type result =
 | Ok of string * float
 | Error of string * float
 | Skipped of string
+| SuiteResult of string * result list
 
 let _string_contains s s' =
   let re = Str.regexp_string s' in
@@ -163,9 +164,9 @@ let _print_assertion_error = function
 | True _ ->
   _print_expect "toBeTrue" "true" "false"
 
-let _print_error context name assertion = begin
+let _print_error context label assertion = begin
   _indent 2; _with_color BrightRed print_endline
-    (name :: context |> List.rev |> String.concat " > ");
+    (label :: context |> List.rev |> String.concat " > ");
   print_newline ();
   _print_assertion_error assertion;
   print_newline ();
@@ -202,79 +203,90 @@ let _test = function
   a
 
 let rec _run context = function
-| SkippedSuite (name, f) ->
-  f ()
-  |> List.map (function
-    | Suite (name, f) -> SkippedSuite (name, f)
-    | Test (name, _) -> SkippedTest name
-    | t -> t)
-  |> List.map @@ _run (name :: context)
-  |> List.flatten
-| SkippedTest name ->
-  let label =
-    List.rev (name :: context) |> String.concat " - " in
-  [Skipped label]
-| Suite (name, f) ->
-  f () |> List.map @@ _run (name :: context) |> List.flatten
-| Test (name, f) ->
-  let label =
-    List.rev (name :: context) |> String.concat " - " in
+| SkippedSuite (label, f) ->
+  let skip = function
+    | Suite (label, f) -> SkippedSuite (label, f)
+    | Test (label, _) -> SkippedTest label
+    | t -> t
+  in
+  SuiteResult (label, f () |> List.map skip |> List.map @@ _run (label :: context))
+| SkippedTest label ->
+  Skipped label
+| Suite (label, f) ->
+  SuiteResult (label, f () |> List.map @@ _run (label :: context))
+| Test (label, f) ->
   let startTime =
     Sys.time () in
   let time () =
     Sys.time () -. startTime in
   let assertion = f () in
   if _test assertion then
-    [Ok (label, time ())]
+    Ok (label, time ())
   else begin
-    _print_error context name assertion;
-    [Error (label, time ())]
+    _print_error context label assertion;
+    Error (label, time ())
   end
 
+let _print_counts results = begin
+  let rec count p results =
+    results
+    |> List.map (function
+      | SuiteResult (_, results) -> count p results
+      | r when p r -> 1
+      | _ -> 0)
+    |> List.fold_left (+) 0
+  in
+  let failed = results |> count (function | Error _ -> true | _ -> false) in
+  let skipped = results |> count (function | Skipped _ -> true | _ -> false) in
+  let passed = results |> count (function | Ok _ -> true | _ -> false) in
+  let total = results |> List.length in
+  _with_color BrightRed (Printf.printf "%i failed") failed;
+  print_string ", ";
+  _with_color Yellow (Printf.printf "%i skipped") skipped;
+  print_string ", ";
+  _with_color Green (Printf.printf "%i passed") passed;
+  Printf.printf ", %i total" total
+end
+
 let _print_summary results =
-  let count_total =
-    results |> List.length in
-  let count_ok =
-    results
-    |> List.filter (function | Ok _ -> true | _ -> false)
-    |> List.length in
-  let count_skipped =
-    results
-    |> List.filter (function | Skipped _ -> true | _ -> false)
-    |> List.length in
-
-  results 
-  |> List.iter (function
+  let print_label label time () =
+      Printf.printf "%s (%.0fms)\n" label (time /. 1000.) in 
+  let rec print_result level = function
     | Ok (label, time) ->
-      _with_color Green (fun () -> Printf.printf "%f %s" time label) ();
-      print_newline ();
+      _indent level; _with_color Green (print_label label time) ();
     | Error (label, time) ->
-      _with_color Red (fun () -> Printf.printf "%f %s: " time label) ();
-      print_newline ();
+      _indent level; _with_color Red (print_label label time) ();
     | Skipped label ->
-      _with_color Yellow (Printf.printf "skipped %s") label;
-      print_newline ();
-    );
-
-  Printf.printf "Executed %i tests. %i tests succeeded. %i skipped" count_total count_ok count_skipped;
+      assert false (* Should be filtered out *)
+    | SuiteResult (label, results) ->
+      let non_skipped = results |> List.filter (function | Skipped _ -> false | _ -> true) in
+      let count_skipped = List.length results - List.length non_skipped in
+      _indent level; _with_color LightGray (Printf.printf "%s:\n") label;
+      non_skipped |> List.iter (print_result (level + 2));
+      if count_skipped > 0 then begin
+        _indent (level + 2); _with_color Yellow print_endline @@ (string_of_int count_skipped) ^ " skipped";
+      end
+  in
+  results |> List.iter (print_result 2);
+  print_newline ();
+  _print_counts results;
   print_newline ()
 
-let describe name f =
-  Suite (name, f)
+let describe label f =
+  Suite (label, f)
 
-let test name f =
-  Test (name, f)
+let test label f =
+  Test (label, f)
 
 let run tests =
   tests
   |> List.map (_run [])
-  |> List.flatten
   |> _print_summary
 
 module Skip = struct
-  let describe name f =
-    SkippedSuite (name, f)
+  let describe label f =
+    SkippedSuite (label, f)
 
-  let test name _ =
-    SkippedTest name
+  let test label _ =
+    SkippedTest label
 end
