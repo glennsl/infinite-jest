@@ -11,5 +11,6 @@ let suite =
     describe "nested suite" (fun () -> [
       test "nested pass" (fun () -> 42 |> Expect.toEqual 42);
       test "nested fail" (fun () -> true |> Expect.toEqual false);
+      test "exception" (fun () -> raise @@ Invalid_argument "foo");
     ])
   ])

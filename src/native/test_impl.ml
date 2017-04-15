@@ -219,13 +219,24 @@ let rec _run context = function
     Sys.time () in
   let time () =
     Sys.time () -. startTime in
-  let assertion = f () in
-  if _test assertion then
-    Ok (label, time ())
-  else begin
-    _print_error context label assertion;
+  try
+    let assertion = f () in
+    if _test assertion then
+      Ok (label, time ())
+    else begin
+      _print_error context label assertion;
+      Error (label, time ())
+    end
+  with e ->
+    _indent 2; _with_color BrightRed print_endline
+      (label :: context |> List.rev |> String.concat " > ");
+    print_newline ();
+    _indent 4; _with_color LightGray print_endline "Error";
+    _indent 6; _with_color DarkGray print_endline @@ Printexc.to_string e;
+    print_newline ();
+    Printexc.print_backtrace stdout;
+    print_newline ();
     Error (label, time ())
-  end
 
 let _print_counts results = begin
   let rec count p results =
