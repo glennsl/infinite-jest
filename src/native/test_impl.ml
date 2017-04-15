@@ -1,10 +1,10 @@
-open Assertions
+open Assert
 
 type t =
 | SkippedSuite of string * (unit -> t list)
 | SkippedTest of string
 | Suite of string * (unit -> t list)
-| Test of string * (unit -> Assertions.t)
+| Test of string * (unit -> Assert.t)
 
 type result =
 | Ok of string * float

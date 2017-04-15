@@ -1,4 +1,4 @@
-open Assertions
+open Assert
 
 let stringContaining b a = StringContains (a, b)
 let toBeCloseTo ?(digits=2) b a = CloseTo (a, b, digits)

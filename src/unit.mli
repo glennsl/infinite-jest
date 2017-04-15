@@ -1,29 +1,29 @@
-module Assertions : sig
+module Assert : sig
   type t
 end
 
 module Expect : sig
-  val stringContaining : string -> string -> Assertions.t
-  val toBeCloseTo : ?digits:int -> float -> float -> Assertions.t
-  val toBeFalse : bool -> Assertions.t
-  val toBeGreaterThan : int -> int -> Assertions.t
-  val toBeLessThan : int -> int -> Assertions.t
-  val toBeTrue : bool -> Assertions.t
-  val toContain : ?printer:('a -> string) -> 'a -> 'a list -> Assertions.t
-  val toContainAll : ?printer:('a -> string) -> 'a list -> 'a list -> Assertions.t
-  val toEqual : ?printer:('a -> string) -> 'a -> 'a -> Assertions.t
-  val toRaise : (unit -> 'a) -> Assertions.t
+  val stringContaining : string -> string -> Assert.t
+  val toBeCloseTo : ?digits:int -> float -> float -> Assert.t
+  val toBeFalse : bool -> Assert.t
+  val toBeGreaterThan : int -> int -> Assert.t
+  val toBeLessThan : int -> int -> Assert.t
+  val toBeTrue : bool -> Assert.t
+  val toContain : ?printer:('a -> string) -> 'a -> 'a list -> Assert.t
+  val toContainAll : ?printer:('a -> string) -> 'a list -> 'a list -> Assert.t
+  val toEqual : ?printer:('a -> string) -> 'a -> 'a -> Assert.t
+  val toRaise : (unit -> 'a) -> Assert.t
 end
 
 module Test : sig
   type t
 
   val describe : string -> (unit -> t list) -> t
-  val test : string -> (unit -> Assertions.t) -> t
+  val test : string -> (unit -> Assert.t) -> t
   val run : t list -> unit
 
   module Skip : sig
     val describe : string -> (unit -> t list) -> t
-    val test : string -> (unit -> Assertions.t) -> t
+    val test : string -> (unit -> Assert.t) -> t
   end
 end

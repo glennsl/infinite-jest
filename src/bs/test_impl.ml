@@ -1,4 +1,4 @@
-open Assertions
+open Assert
 
 type t
 
@@ -6,7 +6,7 @@ external expect : 'a -> < .. > Js.t = "" [@@bs.val]
 external arrayContaining : 'a array -> 'b = "expect.arrayContaining" [@@bs.val]
 external stringContaining : string -> 'b = "expect.stringContaining" [@@bs.val]
 
-let _assert : Assertions.t -> unit = function
+let _assert : Assert.t -> unit = function
 | CloseTo (a, b, digits) -> (expect a) ## toBeCloseTo b digits
 | Equals (a, b, _) -> (expect a) ## toEqual b
 | False a -> (expect a) ## toBeFalsy ()
@@ -31,5 +31,5 @@ let run _ =
 
 module Skip = struct
   external describe : string -> (unit -> t list) -> t = "describe.skip" [@@bs.val]
-  external test : string -> (unit -> Assertions.t) -> t = "test.skip" [@@bs.val]
+  external test : string -> (unit -> Assert.t) -> t = "test.skip" [@@bs.val]
 end
