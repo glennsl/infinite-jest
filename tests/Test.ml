@@ -55,7 +55,7 @@ let assertion_fails =
 
 let _ = 
   run [
-    My_test.suite;
+    MyTest.suite;
     assertions;
     assertion_fails
   ]

@@ -1,24 +1,5 @@
-open Assert
-
-type t =
-| SkippedSuite of string * (unit -> t list)
-| SkippedTest of string
-| Suite of string * (unit -> t list)
-| Test of string * (unit -> Assert.t)
-
-type result =
-| Ok of string * float
-| Error of string * float
-| Skipped of string
-| SuiteResult of string * result list
-
-let _string_contains s s' =
-  let re = Str.regexp_string s' in
-  try
-    ignore (Str.search_forward re s 0);
-    true
-  with Not_found ->
-    false
+open IJCommon
+open IJAssert
 
 type color =
 | Red
@@ -164,80 +145,6 @@ let _print_assertion_error = function
 | True _ ->
   _print_expect "toBeTrue" "true" "false"
 
-let _print_error context label assertion = begin
-  _indent 2; _with_color BrightRed print_endline
-    (label :: context |> List.rev |> String.concat " - ");
-  print_newline ();
-  _print_assertion_error assertion;
-  print_newline ();
-  Printexc.print_backtrace stdout;
-  print_newline ()
-end
-
-
-let _test = function
-| CloseTo (a, b, digits) ->
-  abs_float (a -. b) < (10. ** (-.(float_of_int digits))) /. 2.
-| Equals (a, b, _) ->
-  a = b
-| False a ->
-  not a
-| GreaterThan (a, b) ->
-  a > b
-| LessThan (a, b) ->
-  a < b
-| ListContains (l, x, _) ->
-  List.exists ((=) x) l
-| ListContainsAll (l, l', _) ->
-  l' |> List.for_all @@ fun x -> List.exists ((=) x) l
-| Raises f ->
-  begin try
-    ignore @@ f ();
-    false
-  with
-    _ -> true
-  end
-| StringContains (s, s') ->
-  _string_contains s s'
-| True a ->
-  a
-
-let rec _run context = function
-| SkippedSuite (label, f) ->
-  let skip = function
-    | Suite (label, f) -> SkippedSuite (label, f)
-    | Test (label, _) -> SkippedTest label
-    | t -> t
-  in
-  SuiteResult (label, f () |> List.map skip |> List.map @@ _run (label :: context))
-| SkippedTest label ->
-  Skipped label
-| Suite (label, f) ->
-  SuiteResult (label, f () |> List.map @@ _run (label :: context))
-| Test (label, f) ->
-  let startTime =
-    Sys.time () in
-  let time () =
-    Sys.time () -. startTime in
-  try
-    let assertion = f () in
-    if _test assertion then
-      Ok (label, time ())
-    else begin
-      _print_error context label assertion;
-      Error (label, time ())
-    end
-  with e ->
-    _indent 2; _with_color BrightRed print_endline
-      (label :: context |> List.rev |> String.concat " - ");
-    print_newline ();
-    _indent 4; _with_color LightGray print_endline "Error";
-    _indent 6; _with_color DarkGray print_endline @@ Printexc.to_string e;
-    print_newline ();
-    Printexc.print_backtrace stdout;
-    print_newline ();
-    Error (label, time ())
-
 let _print_counts results = begin
   let rec count p results =
     results
@@ -259,7 +166,28 @@ let _print_counts results = begin
   Printf.printf ", %i total" total
 end
 
-let _print_summary results =
+let print_error context label assertion = begin
+  _indent 2; _with_color BrightRed print_endline
+    (label :: context |> List.rev |> String.concat " - ");
+  print_newline ();
+  _print_assertion_error assertion;
+  print_newline ();
+  Printexc.print_backtrace stdout;
+  print_newline ()
+end
+
+let print_exception context label e = begin
+  _indent 2; _with_color BrightRed print_endline
+    (label :: context |> List.rev |> String.concat " - ");
+  print_newline ();
+  _indent 4; _with_color LightGray print_endline "Error";
+  _indent 6; _with_color DarkGray print_endline @@ Printexc.to_string e;
+  print_newline ();
+  Printexc.print_backtrace stdout;
+  print_newline ();
+end
+
+let print_summary results =
   let print_label label time () =
       Printf.printf "%s (%.0fms)\n" label (time /. 1000.) in 
   let rec print_result level = function
@@ -282,22 +210,3 @@ let _print_summary results =
   print_newline ();
   _print_counts results;
   print_newline ()
-
-let describe label f =
-  Suite (label, f)
-
-let test label f =
-  Test (label, f)
-
-let run tests =
-  tests
-  |> List.map (_run [])
-  |> _print_summary
-
-module Skip = struct
-  let describe label f =
-    SkippedSuite (label, f)
-
-  let test label _ =
-    SkippedTest label
-end

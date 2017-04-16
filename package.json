@@ -14,7 +14,7 @@
   },
   "scripts": {
     "start": "bsb -make-world -w",
-    "test:native": "ocamlbuild -use-ocamlfind -Is src,src/shared,src/native,tests tests/test.byte && ./test.byte",
+    "test:native": "ocamlbuild -use-ocamlfind -Is src,src/shared,src/native,tests tests/Test.byte && ./Test.byte",
     "test:bs": "bsb -make-world && jest",
     "clean": "bsb -clean-world"
   },
