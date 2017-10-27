@@ -1,4 +1,5 @@
 .merlin
+.bsb.lock
 _build/
 node_modules/
 lib/
