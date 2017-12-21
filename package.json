@@ -7,8 +7,21 @@
     "test",
     "ocaml"
   ],
+  "homepage": "https://github.com/glennsl/infinite-jest#readme",
+  "bugs": "https://github.com/glennsl/infinite-jest/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glennsl/infinite-jest.git"
+  },
   "author": "glennsl",
   "license": "MIT",
+  "keywords": [
+    "reason",
+    "bucklescript",
+    "testing",
+    "cross-platform",
+    "jest"
+  ],
   "devDependencies": {
     "bs-platform": "^1.6.0"
   },
