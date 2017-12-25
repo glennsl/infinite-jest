@@ -1,7 +1,7 @@
 {
   "name": "infinite-jest",
   "version": "0.0.0",
-  "description": "",
+  "description": "Experimental cross-platform native/BuckleScript test framework",
   "keywords": [
     "bucklescript",
     "test",
